@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Javascript orienté-objet | Opencode</title>
+
+    <meta charset='utf-8'>
+    <script src='slides.js'></script>
+  </head>
+  
+  <body style='display: none'>
+    
+    <section class='slides layout-regular template-default'>
+      
+      <article>
+        <h1>JavaScript orienté-objet</h1>
+        <p>
+          Charles Demers
+        </p>
+      </article>
+
+      <article>
+        <h3>Coding like a jQuery ninja</h3>
+        <div class="build">
+<pre>
+$(function() {
+  $('#my-form').submit(function() {
+    // [...] build post data object
+    $.post('/ajax', values, function(response) {
+      alert('lol wut?!');
+    });
+  });
+});
+</pre>
+          <ul>
+            <li>Aucune possibilité de réutilisation</li>
+            <li>Manque de séparation des responsabilités</li>
+            <li>Manque d’abstraction</li>
+          </ul>
+
+        </div>
+        
+      </article>
+      
+      <article>
+        <h3>Réutilisation, séparation des responsabilités <br />et abstraction :</h3>
+        <div class="build">
+<pre>
+function makeAjaxForm($form, callback) {
+  $form.submit(function() {
+    doAjaxCall($form, callback);
+  });
+}
+function doAjaxCall($form, callback) {
+  var values = makePostDataObject($form);
+  $.post('/ajax', values, callback);
+}
+makeAjaxForm($('#my-form'), function(response) { // callback });
+</pre>
+        
+          <ul>
+            <li>Pollution de l’objet global</li>
+            <li>Obligation de passer toutes références à d’autres objets en arguments ou de créer d’autres globales</li>
+          </ul>
+          
+        </div>
+
+      </article>
+      
+      <article>
+        <h3>JavaScript basics</h3>
+        
+        <div class="build" style="margin-top: 15px">
+          
+          <ul class="build">
+            <li>Les concepts de classe, module, etc. n’existent pas en JS</li>
+            <li>Le modèle orienté-objet classique est émulé grâce à la «prototypal inheritance» et aux «closures»</li>
+            <li>En JS, tout est un objet et tout objet possède un prototype</li>
+            <li>Le prototype d’un objet est simplement une référence à un autre objet qui lui sert de «delegate»</li>
+          </ul>
+<pre>
+// ce qui se passe pendant un «property lookup»
+// la VM parcours la «prototype chain»
+var obj = {};
+obj.prototype = {
+  item: 'foo'
+};
+// obj.item => undefined
+// obj.protototype.item => 'foo'
+</pre>
+          
+        </div>
+        
+      </article>
+      
+      <article>
+        <h3>Introducing oriented-object JavaScript</h3>
+<pre>
+// this is the constructor
+AjaxForm = function($form, callback) {
+  this.$form = $form;
+  this.callback = callback;
+  this.$form.submit(this.submit.bind(this));
+};
+
+// we define methods here
+AjaxForm.prototype = {
+  buildParams: function() { // build and return params object },
+  submit: function(e) {
+    e.preventDefault();
+    var params = this.buildParams();
+    if (this.callback) {
+      this.callback(this.$form, params);
+    }
+  }
+};
+var form = new AjaxForm($('my-form'), function() { // do stuff });
+</pre>
+      </article>
+
+      <article>
+        <h3>Émuler le modèle orienté-object classique (1/2)</h3>
+<pre>
+User = function(username, group) {
+  this.username = username;
+  this.group = group;
+  var self = this;
+  // privileges is a private variable
+  // because of how scope works,
+  // this can only be used in the constructor...
+  var privileges = (self.group == "admin") ? {write: true, read: true} ¬
+    : {write: false, read: true};
+  
+  // this method is protected, it is accessible publicly
+  // in the constructor + prototype, but only on this instance
+  // and it has access to private variables
+  this.writeStuff = function() {
+    if (privileges.write) { // ... }
+  };
+};
+</pre>
+      </article>
+      
+      <article>
+        <h3>Au sujet des méthodes protégées</h3>
+        <ul>
+          <li>Les méthodes protégées sont copiées dans chaque objet</li>
+          <li>Plus il y a d’instances, plus la consommation en mémoire de l’app sera grande</li>
+        </ul>
+        
+        <h4>Conventions en JavaScript</h4>
+<pre>
+MyClass = function() { //... };
+
+MyClass.prototype = {
+  // this is obviously not private,
+  // but don’t use it as its API might change
+  _privateMethod: function() { //... },
+  
+  publicMethod: function() { //... }
+  
+};
+</pre>
+      </article>
+      
+      <article>
+        <h3>Émuler le modèle orienté-object classique (2/2)</h3>
+<pre>
+  User = function(username, group) { //... }
+  
+  // static methods
+  User.get = function(username) {
+    // ajax call which returns:
+    // response = {username: "bob@foobar.com", group: "admin"}
+    return new User(response.username, response.group);
+  };
+  
+  User.prototype = { //... }
+  
+  var bob = User.get("bob@foobar.com");
+  bob.readStuff();
+</pre>
+      </article>
+
+      <article>
+        <h3>Merci!</h3>
+        
+        <p>
+          Twitter<br />
+          <strong>@charles_demers</strong>
+        </p>
+        <p>
+          Github<br />
+          <strong>http://github.com/charlesdemers</strong>
+        </p>
+      </article>
+
+    </section>
+
+  </body>
+</html>
